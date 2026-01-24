@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>AR 魔法陣召喚＋変身＋電撃</title>
+
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { margin:0; overflow:hidden; }
+canvas#electric {
+  position:absolute; top:0; left:0;
+  width:100%; height:100%;
+  pointer-events:none;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="electric"></canvas>
+
+<a-scene
+  embedded
+  arjs="sourceType: webcam; trackingBackend: artoolkit; debugUIEnabled: true;"
+  renderer="antialias:true; alpha:true">
+
+  <a-marker id="marker" type="pattern" url="magic_marker.patt">
+
+    <!-- 魔法陣（演出用） -->
+    <a-image src="magic_circle.png" rotation="-90 0 0" position="0 0 0" width="1" height="1"></a-image>
+
+    <!-- 画像1 -->
+    <a-image id="img1" src="image1.png"
+      rotation="-90 0 0" position="0 -0.1 0" scale="0.6 0.6 0.6"
+      width="0.7" height="0.7" visible="false" material="transparent:true; opacity:0"
+      gesture-handler></a-image>
+
+    <!-- 画像2 -->
+    <a-image id="img2" src="image2.png"
+      rotation="-90 0 0" position="0 -0.1 0" scale="0.6 0.6 0.6"
+      width="0.7" height="0.7" visible="false" material="transparent:true; opacity:0"
+      gesture-handler></a-image>
+
+  </a-marker>
+
+  <a-entity camera></a-entity>
+</a-scene>
+
+<script>
+const marker = document.querySelector("#marker");
+const img1 = document.querySelector("#img1");
+const img2 = document.querySelector("#img2");
+
+// マーカー検出
+marker.addEventListener("markerFound", () => {
+  summon(img1);
+});
+
+marker.addEventListener("markerLost", () => {
+  img1.setAttribute("visible","false");
+  img2.setAttribute("visible","false");
+  img1.removeAttribute("animation__pos");
+  img1.removeAttribute("animation__scale");
+  img1.removeAttribute("animation__fade");
+  img2.removeAttribute("animation__pos");
+  img2.removeAttribute("animation__scale");
+  img2.removeAttribute("animation__fade");
+});
+
+// 画像1召喚
+function summon(img){
+  img.setAttribute("visible","true");
+
+  img.setAttribute("animation__pos",
+    "property: position; from:0 -0.1 0; to:0 0.3 0; dur:400; easing:easeOutCubic");
+
+  img.setAttribute("animation__fade",
+    "property: material.opacity; from:0; to:1; dur:300");
+
+  img.setAttribute("animation__scale",
+    "property: scale; from:0.6 0.6 0.6; to:1 1 1; dur:500; delay:200; easing:easeOutElastic");
+}
+
+// 画像1タップで画像2に変身 + 電撃
+img1.addEventListener("click", () => {
+  img1.setAttribute("visible","false");
+  summon(img2);
+  startElectric();
+});
+
+// 電撃演出
+const canvas = document.getElementById("electric");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+function startElectric(){
+  let ticks = 0;
+  function draw(){
+    ticks++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let i=0;i<12;i++){
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(0,200,255,${Math.random()})`;
+      ctx.lineWidth = 2;
+      let x = canvas.width/2;
+      let y = canvas.height/2;
+      ctx.moveTo(x,y);
+      ctx.lineTo(x + Math.random()*200-100, y + Math.random()*200-100);
+      ctx.stroke();
+    }
+    if(ticks<15) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
+
+// ジェスチャ操作（スワイプ・ピンチ）
+AFRAME.registerComponent('gesture-handler', {
+  init: function() {
+    let startDist = 0;
+    let startScale = 1;
+    this.el.sceneEl.canvas.addEventListener('touchstart', (e) => {
+      if(e.touches.length === 2){
+        startDist = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+        startScale = this.el.object3D.scale.x;
+      }
+    });
+    this.el.sceneEl.canvas.addEventListener('touchmove', (e) => {
+      if(e.touches.length === 1){
+        this.el.object3D.position.x += (e.touches[0].movementX||0) * 0.001;
+        this.el.object3D.position.z += (e.touches[0].movementY||0) * 0.001;
+      }
+      if(e.touches.length === 2){
+        const distNow = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+        const scaleFactor = (distNow / startDist) * startScale;
+        this.el.object3D.scale.set(scaleFactor, scaleFactor, scaleFactor);
+      }
+    });
+  }
+});
+</script>
+
+</body>
+</html>
