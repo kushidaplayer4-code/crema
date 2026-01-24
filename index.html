@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>AR Marker Test</title>
+
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+body { margin:0; overflow:hidden; }
+</style>
+</head>
+
+<body>
+
+<a-scene
+  embedded
+  arjs="sourceType: webcam; trackingBackend: artoolkit;"
+  renderer="antialias:true; alpha:true">
+
+  <!-- マーカー -->
+  <a-marker type="pattern" url="magic_marker.patt">
+
+    <!-- 確認用：赤い板（絶対出る） -->
+    <a-plane
+      color="red"
+      rotation="-90 0 0"
+      position="0 0.1 0"
+      width="0.8"
+      height="0.8">
+    </a-plane>
+
+  </a-marker>
+
+  <a-entity camera></a-entity>
+</a-scene>
+
+</body>
+</html>
+
+
