@@ -47,7 +47,7 @@ marker.addEventListener("markerFound", () => {
     img1.setAttribute("id", "img1");
     img1.setAttribute("src", "image1.png");
     img1.setAttribute("rotation", "-90 0 0");
-    img1.setAttribute("position", "0 -0.1 0");
+    img1.setAttribute("position", "0 -0.1 0"); // 少し下げる
     img1.setAttribute("width", "0.7");
     img1.setAttribute("height", "0.7");
     img1.setAttribute("scale", "0.01 0.01 0.01"); // 0ではなく極小値
@@ -72,7 +72,7 @@ marker.addEventListener("markerFound", () => {
         img2.setAttribute("width", "0.7");
         img2.setAttribute("height", "0.7");
         img2.setAttribute("scale", "0.01 0.01 0.01");
-        img2.setAttribute("material", "color:#ffffff; opacity:0; transparent:true");
+        img2.setAttribute("material", "color:#ffffff; opacity:0; transparent:true"); // 黒四角回避
         img2.setAttribute("gesture-handler", "");
         marker.appendChild(img2);
 
