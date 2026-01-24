@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>AR 魔法陣召喚 シンプル版</title>
+
+<!-- A-Frame と AR.js -->
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { margin:0; overflow:hidden; }
+canvas#electric {
+  position:absolute; top:0; left:0;
+  width:100%; height:100%;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<canvas id="electric"></canvas>
+
+<a-scene
+  embedded
+  arjs="sourceType: webcam; trackingBackend: artoolkit; debugUIEnabled: false;"
+  renderer="antialias:true; alpha:true">
+
+  <a-marker id="marker" type="pattern" url="magic_marker.patt">
+    <!-- 常に表示する魔法陣 -->
+    <a-image src="magic_circle.png" rotation="-90 0 0" position="0 0 0" width="1" height="1"></a-image>
+  </a-marker>
+
+  <a-entity camera></a-entity>
+</a-scene>
+
+<script>
+// マーカー
+const marker = document.querySelector("#marker");
+let img1 = null, img2 = null;
+
+// マーカー検出で画像1を表示
+marker.addEventListener("markerFound", () => {
+  if (!img1) {
+    img1 = document.createElement("a-image");
+    img1.setAttribute("src", "image1.png");
+    img1.setAttribute("rotation", "-90 0 0");
+    img1.setAttribute("position", "0 -0.1 0");
+    img1.setAttribute("width", "0.7");
+    img1.setAttribute("height", "0.7");
+    img1.setAttribute("scale", "0.01 0.01 0.01");
+    img1.setAttribute("material", "color:#ffffff; opacity:0; transparent:true");
+    marker.appendChild(img1);
+
+    // アニメーション
+    img1.setAttribute("animation__pos", "property: position; from:0 -0.1 0; to:0 0.3 0; dur:400; easing:easeOutCubic");
+    img1.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:300");
+    img1.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:500; delay:200; easing:easeOutElastic");
+
+    // タップで画像2に変身＋電撃
+    img1.addEventListener("click", () => {
+      img1.remove();
+
+      img2 = document.createElement("a-image");
+      img2.setAttribute("src", "image2.png");
+      img2.setAttribute("rotation", "-90 0 0");
+      img2.setAttribute("position", "0 -0.1 0");
+      img2.setAttribute("width", "0.7");
+      img2.setAttribute("height", "0.7");
+      img2.setAttribute("scale", "0.01 0.01 0.01");
+      img2.setAttribute("material", "color:#ffffff; opacity:0; transparent:true");
+      marker.appendChild(img2);
+
+      img2.setAttribute("animation__pos", "property: position; from:0 -0.1 0; to:0 0.3 0; dur:400; easing:easeOutCubic");
+      img2.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:300");
+      img2.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:500; delay:200; easing:easeOutElastic");
+
+      // 電撃演出
+      startElectric();
+    });
+  }
+});
+
+// マーカー外れたら削除
+marker.addEventListener("markerLost", () => {
+  if(img1){ img1.remove(); img1 = null; }
+  if(img2){ img2.remove(); img2 = null; }
+});
+
+// 電撃演出
+const canvas = document.getElementById("electric");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+function startElectric() {
+  let f = 0;
+  function draw() {
+    f++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let i=0;i<12;i++){
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(0,200,255,${Math.random()})`;
+      ctx.lineWidth = 2;
+      ctx.moveTo(canvas.width/2, canvas.height/2);
+      ctx.lineTo(canvas.width/2 + Math.random()*200-100, canvas.height/2 + Math.random()*200-100);
+      ctx.stroke();
+    }
+    if(f<15) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
+</script>
+
+</body>
+</html>
