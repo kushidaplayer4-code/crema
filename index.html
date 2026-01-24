@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>AR STEP3 フェードイン</title>
+
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { margin:0; overflow:hidden; }
+</style>
+</head>
+
+<body>
+
+<a-scene
+  embedded
+  arjs="sourceType: webcam; trackingBackend: artoolkit;"
+  renderer="antialias:true; alpha:true">
+
+  <a-marker id="marker" type="pattern" url="magic_marker.patt">
+
+    <a-image
+      id="img"
+      src="image1.png"
+      rotation="-90 0 0"
+      position="0 0.3 0"
+      width="0.7"
+      height="0.7"
+      visible="false"
+      material="transparent:true; opacity:0">
+    </a-image>
+
+  </a-marker>
+
+  <a-entity camera></a-entity>
+</a-scene>
+
+<script>
+const marker = document.querySelector("#marker");
+const img = document.querySelector("#img");
+
+marker.addEventListener("markerFound", () => {
+  img.setAttribute("visible", "true");
+  img.setAttribute("animation__fade",
+    "property: material.opacity; from:0; to:1; dur:500");
+});
+
+marker.addEventListener("markerLost", () => {
+  img.setAttribute("visible", "false");
+  img.removeAttribute("animation__fade");
+});
+</script>
+
+</body>
+</html>
