@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>魔法陣召喚AR（強化版）</title>
+<title>魔法陣召喚AR 完全版</title>
 
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
@@ -26,6 +26,7 @@ canvas#electric {
   arjs="sourceType: webcam; trackingBackend: artoolkit; debugUIEnabled: false;"
   renderer="antialias:true; alpha:true">
 
+  <!-- マーカー -->
   <a-marker type="pattern" url="magic_marker.patt" id="marker"></a-marker>
   <a-entity camera></a-entity>
 </a-scene>
@@ -35,26 +36,30 @@ canvas#electric {
 const marker = document.querySelector("#marker");
 let img1 = null, img2 = null;
 
-// 画像比率（縦横比を合わせる）
-const image1Ratio = 1.0;
-const image2Ratio = 1.0;
-
 // マーカー検出で画像1召喚
 marker.addEventListener("markerFound", () => {
   if (!img1) {
-    img1 = document.createElement("a-image");
-    img1.setAttribute("src", "image1.png");
-    img1.setAttribute("rotation", "-90 0 0");
-    img1.setAttribute("position", "0 0 0");
-    img1.setAttribute("width", "0.7");
-    img1.setAttribute("height", (0.7 / image1Ratio).toString());
-    img1.setAttribute("scale", "0.01 0.01 0.01");
-    img1.setAttribute("material", "color:#ffffff; transparent:true; opacity:0");
-    marker.appendChild(img1);
+    const image = new Image();
+    image.src = "image1.png";
+    image.onload = () => {
+      const aspect = image.width / image.height; // 縦横比計算
+      const width = 0.7;
+      const height = width / aspect;
 
-    // ゆっくりふわっと出現
-    img1.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:1200");
-    img1.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:1500; easing:easeOutElastic");
+      img1 = document.createElement("a-image");
+      img1.setAttribute("src", "image1.png");
+      img1.setAttribute("rotation", "-90 0 0");
+      img1.setAttribute("position", "0 0 0");
+      img1.setAttribute("width", width);
+      img1.setAttribute("height", height);
+      img1.setAttribute("scale", "0.01 0.01 0.01");
+      img1.setAttribute("material", "transparent:true; opacity:0");
+      marker.appendChild(img1);
+
+      // ふわっと出現
+      img1.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:1200");
+      img1.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:1500; easing:easeOutElastic");
+    };
   }
 });
 
@@ -65,23 +70,30 @@ document.addEventListener("click", () => {
   img1.remove();
   img1 = null;
 
-  // 画像2生成（位置は画像1と同じ）
-  img2 = document.createElement("a-image");
-  img2.setAttribute("src", "image2.png");
-  img2.setAttribute("rotation", "-90 0 0");
-  img2.setAttribute("position", "0 0 0");
-  img2.setAttribute("width", "0.7");
-  img2.setAttribute("height", (0.7 / image2Ratio).toString());
-  img2.setAttribute("scale", "0.01 0.01 0.01");
-  img2.setAttribute("material", "color:#ffffff; transparent:true; opacity:0");
-  marker.appendChild(img2);
+  const image = new Image();
+  image.src = "image2.png";
+  image.onload = () => {
+    const aspect = image.width / image.height;
+    const width = 0.7;
+    const height = width / aspect;
 
-  // ゆっくり出現
-  img2.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:1200");
-  img2.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:1500; easing:easeOutElastic");
+    img2 = document.createElement("a-image");
+    img2.setAttribute("src", "image2.png");
+    img2.setAttribute("rotation", "-90 0 0");
+    img2.setAttribute("position", "0 0 0");
+    img2.setAttribute("width", width);
+    img2.setAttribute("height", height);
+    img2.setAttribute("scale", "0.01 0.01 0.01");
+    img2.setAttribute("material", "transparent:true; opacity:0");
+    marker.appendChild(img2);
 
-  // 電撃演出
-  startElectric();
+    // ゆっくり出現
+    img2.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:1200");
+    img2.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:1500; easing:easeOutElastic");
+
+    // 電撃演出
+    startElectric();
+  };
 });
 
 // マーカー外れたら削除
@@ -90,7 +102,7 @@ marker.addEventListener("markerLost", () => {
   if (img2) { img2.remove(); img2 = null; }
 });
 
-// 電撃演出（派手に）
+// 電撃演出
 const canvas = document.getElementById("electric");
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
@@ -102,22 +114,22 @@ function startElectric() {
     f++;
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    // 中心に向かって電撃
+    // 画像の中心に合わせる（少し下にずらす）
     const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
+    const centerY = canvas.height / 2 + 30; // 下にずらす
 
-    for (let i = 0; i < 25; i++) { // 線の本数増やす
+    for (let i = 0; i < 30; i++) { // 線本数増加
       ctx.beginPath();
       ctx.strokeStyle = `rgba(${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, 255, ${Math.random()})`;
       ctx.lineWidth = Math.random()*3 + 1;
-      const x = centerX + Math.random()*300 - 150;
-      const y = centerY + Math.random()*300 - 150;
+      const x = centerX + Math.random()*350 - 175;
+      const y = centerY + Math.random()*350 - 175;
       ctx.moveTo(centerX, centerY);
       ctx.lineTo(x, y);
       ctx.stroke();
     }
 
-    if(f < 40) requestAnimationFrame(draw); // 電撃長め
+    if(f < 60) requestAnimationFrame(draw); // 約2秒
     else ctx.clearRect(0,0,canvas.width,canvas.height);
   }
   draw();
