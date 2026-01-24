@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>魔法陣召喚AR</title>
+<title>魔法陣召喚AR（修正版）</title>
 
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
@@ -26,16 +26,20 @@ canvas#electric {
   arjs="sourceType: webcam; trackingBackend: artoolkit; debugUIEnabled: false;"
   renderer="antialias:true; alpha:true">
 
-  <!-- マーカー（紙に印刷された魔法陣を認識） -->
+  <!-- マーカー（紙に印刷された魔法陣） -->
   <a-marker type="pattern" url="magic_marker.patt" id="marker"></a-marker>
 
   <a-entity camera></a-entity>
 </a-scene>
 
 <script>
-// マーカー取得
+// マーカー
 const marker = document.querySelector("#marker");
 let img1 = null, img2 = null;
+
+// 画像比率（width:height）
+const image1Ratio = 1.0;  // 例: 正方形なら1、縦長なら 0.8、横長なら 1.5 に調整
+const image2Ratio = 1.0;
 
 // マーカー検出で画像1召喚
 marker.addEventListener("markerFound", () => {
@@ -45,19 +49,19 @@ marker.addEventListener("markerFound", () => {
     img1.setAttribute("rotation", "-90 0 0");
     img1.setAttribute("position", "0 0 0");
     img1.setAttribute("width", "0.7");
-    img1.setAttribute("height", "0.7");
+    img1.setAttribute("height", (0.7 / image1Ratio).toString());
     img1.setAttribute("scale", "0.01 0.01 0.01");
     img1.setAttribute("material", "color:#ffffff; transparent:true; opacity:0");
     marker.appendChild(img1);
 
-    // ふわっと出現アニメ
-    img1.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:400");
-    img1.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:500; easing:easeOutElastic");
+    // ゆっくりふわっと出現
+    img1.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:1000");
+    img1.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:1200; easing:easeOutElastic");
   }
 });
 
 // タップで画像1 → 画像2 + 電撃
-document.addEventListener("click", (e) => {
+document.addEventListener("click", () => {
   if (!img1 || img2) return;
 
   // 画像1削除
@@ -70,13 +74,14 @@ document.addEventListener("click", (e) => {
   img2.setAttribute("rotation", "-90 0 0");
   img2.setAttribute("position", "0 0 0");
   img2.setAttribute("width", "0.7");
-  img2.setAttribute("height", "0.7");
+  img2.setAttribute("height", (0.7 / image2Ratio).toString());
   img2.setAttribute("scale", "0.01 0.01 0.01");
   img2.setAttribute("material", "color:#ffffff; transparent:true; opacity:0");
   marker.appendChild(img2);
 
-  img2.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:400");
-  img2.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:500; easing:easeOutElastic");
+  // ゆっくり出現
+  img2.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:1000");
+  img2.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:1200; easing:easeOutElastic");
 
   // 電撃演出
   startElectric();
@@ -88,7 +93,7 @@ marker.addEventListener("markerLost", () => {
   if (img2) { img2.remove(); img2 = null; }
 });
 
-// 電撃演出（Canvas）
+// 電撃演出
 const canvas = document.getElementById("electric");
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
@@ -99,7 +104,7 @@ function startElectric() {
   function draw() {
     f++;
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    for (let i = 0; i < 12; i++) {
+    for (let i=0; i<12; i++) {
       ctx.beginPath();
       ctx.strokeStyle = `rgba(0,200,255,${Math.random()})`;
       ctx.lineWidth = 2;
@@ -107,7 +112,7 @@ function startElectric() {
       ctx.lineTo(canvas.width/2 + Math.random()*200-100, canvas.height/2 + Math.random()*200-100);
       ctx.stroke();
     }
-    if(f < 15) requestAnimationFrame(draw);
+    if(f < 30) requestAnimationFrame(draw);  // 電撃も少し長め
     else ctx.clearRect(0,0,canvas.width,canvas.height);
   }
   draw();
