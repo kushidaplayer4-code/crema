@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>召喚</title>
+
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { margin:0; overflow:hidden; }
+canvas#electric {
+  position:absolute; top:0; left:0;
+  width:100%; height:100%;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<canvas id="electric"></canvas>
+
+<a-scene
+  embedded
+  arjs="sourceType: webcam; trackingBackend: artoolkit; debugUIEnabled: false;"
+  renderer="antialias:true; alpha:true">
+
+  <a-marker type="pattern" url="magic_marker.patt" id="marker"></a-marker>
+  <a-entity camera></a-entity>
+</a-scene>
+
+<script>
+const marker = document.querySelector("#marker");
+let img1 = null, img2 = null;
+
+// ── 画像2専用ピンチ拡大 ──
+function addPinchZoom(el) {
+  let initialDistance = null;
+  let initialScale = null;
+
+  el.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      initialDistance = Math.hypot(dx, dy);
+      initialScale = el.object3D.scale.clone();
+    }
+  });
+
+  el.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 2 && initialDistance && initialScale) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const distance = Math.hypot(dx, dy);
+      const scale = distance / initialDistance;
+
+      el.object3D.scale.set(
+        initialScale.x * scale,
+        initialScale.y * scale,
+        initialScale.z * scale
+      );
+    }
+  });
+
+  el.addEventListener("touchend", (e) => {
+    if (e.touches.length < 2) {
+      initialDistance = null;
+      initialScale = null;
+    }
+  });
+}
+
+// ── マーカー検出で画像1表示（拡大縮小なし） ──
+marker.addEventListener("markerFound", () => {
+  if (img1) return;
+
+  const image = new Image();
+  image.src = "image1.png";
+  image.onload = () => {
+    const aspect = image.width / image.height;
+    const width = 0.7;
+    const height = width / aspect;
+
+    img1 = document.createElement("a-image");
+    img1.setAttribute("src", "image1.png");
+    img1.setAttribute("rotation", "-90 0 0");
+    img1.setAttribute("position", "0 0 0");
+    img1.setAttribute("width", width);
+    img1.setAttribute("height", height);
+    img1.setAttribute("scale", "0.01 0.01 0.01");
+    img1.setAttribute("material", "transparent:true; opacity:0");
+
+    marker.appendChild(img1);
+
+    // 出現アニメーション
+    img1.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:1200");
+    img1.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:1500; easing:easeOutElastic");
+  };
+});
+
+// ── クリックで画像1→画像2 + 電撃 ──
+document.addEventListener("click", () => {
+  if (!img1 || img2) return;
+
+  img1.remove();
+  img1 = null;
+
+  const image = new Image();
+  image.src = "image2.png";
+  image.onload = () => {
+    const aspect = image.width / image.height;
+    const width = 0.7;
+    const height = width / aspect;
+
+    img2 = document.createElement("a-image");
+    img2.setAttribute("src", "image2.png");
+    img2.setAttribute("rotation", "-90 0 0");
+    img2.setAttribute("position", "0 0 0");
+    img2.setAttribute("width", width);
+    img2.setAttribute("height", height);
+    img2.setAttribute("scale", "0.01 0.01 0.01");
+    img2.setAttribute("material", "transparent:true; opacity:0");
+
+    addPinchZoom(img2); // 画像2のみピンチ拡大対応
+
+    marker.appendChild(img2);
+
+    img2.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:1200");
+    img2.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:1500; easing:easeOutElastic");
+
+    startElectric(img2); // 派手電撃演出
+  };
+});
+
+// ── マーカー外れたら削除 ──
+marker.addEventListener("markerLost", () => {
+  if (img1) { img1.remove(); img1 = null; }
+  if (img2) { img2.remove(); img2 = null; }
+});
+
+// ── 電撃演出 ──
+const canvas = document.getElementById("electric");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+function startElectric(targetImg) {
+  let f = 0;
+  function draw() {
+    f++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2 + 30;
+    const maxDist = 200 * targetImg.object3D.scale.x;
+
+    for (let i = 0; i < 50; i++) {
+      ctx.beginPath();
+      const r = Math.floor(150 + Math.random()*105);
+      const g = Math.floor(150 + Math.random()*105);
+      const b = 255;
+      const a = Math.random()*0.7 + 0.3;
+      ctx.strokeStyle = `rgba(${r},${g},${b},${a})`;
+      ctx.lineWidth = Math.random()*3 + 2;
+
+      const x = centerX + (Math.random()-0.5) * maxDist * 2;
+      const y = centerY + (Math.random()-0.5) * maxDist * 2;
+
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+
+    if (Math.random() < 0.1) {
+      ctx.fillStyle = "rgba(255,255,255,0.2)";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+
+    if(f < 60) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
+
+// リサイズ対応
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+</script>
+
+</body>
+</html>
