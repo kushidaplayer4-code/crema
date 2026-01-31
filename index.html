@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>召喚</title>
+<title>魔召喚</title>
 
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
@@ -93,7 +93,6 @@ marker.addEventListener("markerFound", () => {
 
     marker.appendChild(img1);
 
-    // 出現アニメーション
     img1.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:1200");
     img1.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:1500; easing:easeOutElastic");
   };
@@ -129,7 +128,7 @@ document.addEventListener("click", () => {
     img2.setAttribute("animation__fade", "property: material.opacity; from:0; to:1; dur:1200");
     img2.setAttribute("animation__scale", "property: scale; from:0.01 0.01 0.01; to:1 1 1; dur:1500; easing:easeOutElastic");
 
-    startElectric(img2); // 派手電撃演出
+    startElectric(img2, image); // 派手電撃
   };
 });
 
@@ -139,23 +138,46 @@ marker.addEventListener("markerLost", () => {
   if (img2) { img2.remove(); img2 = null; }
 });
 
-// ── 電撃演出 ──
+// ── 電撃演出（画像の形に沿う） ──
 const canvas = document.getElementById("electric");
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-function startElectric(targetImg) {
+function startElectric(targetImg, image) {
+  // 画像の輪郭データ取得
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = image.width;
+  tempCanvas.height = image.height;
+  const tempCtx = tempCanvas.getContext("2d");
+  tempCtx.drawImage(image,0,0);
+  const imgData = tempCtx.getImageData(0,0,image.width,image.height).data;
+
+  // 透過でないピクセルの座標を配列にする
+  const points = [];
+  for(let y=0; y<image.height; y+=4){
+    for(let x=0; x<image.width; x+=4){
+      const alpha = imgData[(y*image.width + x)*4+3];
+      if(alpha>50){ // 半透明以上は輪郭に含める
+        points.push({x,y});
+      }
+    }
+  }
+
   let f = 0;
   function draw() {
     f++;
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2 + 30;
-    const maxDist = 200 * targetImg.object3D.scale.x;
+    const centerX = canvas.width/2;
+    const centerY = canvas.height/2+30;
+    const scale = 200 * targetImg.object3D.scale.x / Math.max(image.width,image.height);
 
-    for (let i = 0; i < 50; i++) {
+    for(let i=0; i<60; i++){
+      const p = points[Math.floor(Math.random()*points.length)];
+      const px = centerX + (p.x - image.width/2)*scale;
+      const py = centerY + (p.y - image.height/2)*scale;
+
       ctx.beginPath();
       const r = Math.floor(150 + Math.random()*105);
       const g = Math.floor(150 + Math.random()*105);
@@ -163,21 +185,17 @@ function startElectric(targetImg) {
       const a = Math.random()*0.7 + 0.3;
       ctx.strokeStyle = `rgba(${r},${g},${b},${a})`;
       ctx.lineWidth = Math.random()*3 + 2;
-
-      const x = centerX + (Math.random()-0.5) * maxDist * 2;
-      const y = centerY + (Math.random()-0.5) * maxDist * 2;
-
-      ctx.moveTo(centerX, centerY);
-      ctx.lineTo(x, y);
+      ctx.moveTo(centerX,centerY);
+      ctx.lineTo(px,py);
       ctx.stroke();
     }
 
-    if (Math.random() < 0.1) {
-      ctx.fillStyle = "rgba(255,255,255,0.2)";
+    if(Math.random()<0.1){
+      ctx.fillStyle="rgba(255,255,255,0.2)";
       ctx.fillRect(0,0,canvas.width,canvas.height);
     }
 
-    if(f < 60) requestAnimationFrame(draw);
+    if(f<60) requestAnimationFrame(draw);
     else ctx.clearRect(0,0,canvas.width,canvas.height);
   }
   draw();
