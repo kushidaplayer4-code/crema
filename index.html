@@ -6,6 +6,8 @@
 
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+<!-- ジェスチャー検出用 -->
+<script src="https://cdn.jsdelivr.net/gh/wmurphyrd/aframe-gesture-detector-component@v4.0.1/dist/aframe-gesture-detector-component.min.js"></script>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
@@ -31,6 +33,19 @@ canvas#electric {
 </a-scene>
 
 <script>
+// ── ピンチ拡大用コンポーネント ──
+AFRAME.registerComponent('pinch-scale', {
+  init: function () {
+    this.el.addEventListener('pinch', (event) => {
+      let scale = this.el.getAttribute('scale');
+      scale.x *= event.detail.scale;
+      scale.y *= event.detail.scale;
+      scale.z *= event.detail.scale;
+      this.el.setAttribute('scale', scale);
+    });
+  }
+});
+
 const marker = document.querySelector("#marker");
 let img1 = null, img2 = null;
 
@@ -53,6 +68,8 @@ marker.addEventListener("markerFound", () => {
     img1.setAttribute("height", height);
     img1.setAttribute("scale", "0.01 0.01 0.01");
     img1.setAttribute("material", "transparent:true; opacity:0");
+    img1.setAttribute("gesture-detector", "");
+    img1.setAttribute("pinch-scale", "");
 
     marker.appendChild(img1);
 
@@ -84,6 +101,8 @@ document.addEventListener("click", () => {
     img2.setAttribute("height", height);
     img2.setAttribute("scale", "0.01 0.01 0.01");
     img2.setAttribute("material", "transparent:true; opacity:0");
+    img2.setAttribute("gesture-detector", "");
+    img2.setAttribute("pinch-scale", "");
 
     marker.appendChild(img2);
 
