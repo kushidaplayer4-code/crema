@@ -149,7 +149,85 @@ window.addEventListener('resize', () => {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 });
+  // ───────────────
+// タッチ操作（画像2のみ）
+// ───────────────
+
+let isDragging = false;
+let lastX = 0;
+let lastY = 0;
+
+let startDist = 0;
+let startScale = 1;
+
+function getDistance(touches){
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+document.addEventListener("touchstart", (e) => {
+
+  if(!img2) return;
+
+  if(e.touches.length === 1){
+    // ドラッグ開始
+    isDragging = true;
+    lastX = e.touches[0].clientX;
+    lastY = e.touches[0].clientY;
+  }
+
+  if(e.touches.length === 2){
+    // ピンチ開始
+    startDist = getDistance(e.touches);
+
+    const scale = img2.getAttribute("scale");
+    startScale = scale.x;
+  }
+
+});
+
+document.addEventListener("touchmove", (e) => {
+
+  if(!img2) return;
+
+  // ── 1本指移動 ──
+  if(e.touches.length === 1 && isDragging){
+
+    const x = e.touches[0].clientX;
+    const y = e.touches[0].clientY;
+
+    const dx = (x - lastX) * 0.002;
+    const dy = (y - lastY) * 0.002;
+
+    const pos = img2.getAttribute("position");
+
+    img2.setAttribute("position", {
+      x: pos.x + dx,
+      y: pos.y,
+      z: pos.z + dy
+    });
+
+    lastX = x;
+    lastY = y;
+  }
+
+  // ── 2本指ズーム ──
+  if(e.touches.length === 2){
+
+    const dist = getDistance(e.touches);
+    const scale = startScale * (dist / startDist);
+
+    img2.setAttribute("scale", `${scale} ${scale} ${scale}`);
+  }
+
+});
+
+document.addEventListener("touchend", () => {
+  isDragging = false;
+});
 </script>
 
 </body>
 </html>
+
